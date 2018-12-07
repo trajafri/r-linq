@@ -7,4 +7,4 @@ Installation
 
 To install from Github
 
-``raco pkg install https://github.com/turab1996/r-linq.git``
+``raco pkg install https://github.com/trajafri/r-linq.git``
