@@ -1,7 +1,7 @@
 #lang scribble/manual
 
 @(require (for-label r-linq
-                     (except-in racket/base = let))
+                     (except-in racket/base let))
           scribble/example)
 
 @(define (make-linq-eval)
@@ -21,15 +21,14 @@ source code: @url["https://github.com/turab1996/r-linq"]
 
 This package provides a simple implementation of
 @hyperlink["https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/"]{.NET's LINQ}
-in Racket. This implementation was developed as a final project for a DSL course
-taught by Sam Tobin-Hochstadt at Indiana University.
+in Racket.
 
 @section{Query Syntax}
 LINQ's grammar (as described @hyperlink["https://msdn.microsoft.com/en-us/library/bb308959.aspx"]{here})
 is represented in the Racket language as follows:
 
 @racketgrammar*[
- #:literals(from join let where orderby select group by in on into =)
+ #:literals(from join let where orderby select group by in on into)
  [query-expression (from var in src
                      query-body-clause ...
                      final-query-clause)]
@@ -37,7 +36,7 @@ is represented in the Racket language as follows:
   (from var in src)
   (join var in src on expr comp-func expr)
   (join var in src on expr comp-func expr into var)
-  (let var = expr)
+  (let var expr)
   (where expr)
   (orderby [expr comp-func] ...+)
   (select expr into var)
@@ -75,7 +74,7 @@ The documentation below is based on the
                  (select (i 1))) '(4 5 6)))
 
  Since a select operator finalizes a query, it might be helpful to post-process the results
- of a select clause. To do this, the into form of select can be used:
+ of a select clause. To do this, the @racket[into] form of select can be used:
 
  @(linq-examples
    (eval:check (from i in '(1 2 3)
@@ -89,11 +88,11 @@ The documentation below is based on the
  
  More usage of @racket[select] can be seen under other query operator's examples.}
 
-@defform[#:kind "final query operator" (group expr by expr)]{
- The group clause returns a sequence of (list X (listof Y)) that contain zero or more items that match the
+@defform[#:kind "final query operator" #:literals (by) (group expr by expr)]{
+ The group clause returns a sequence of @racket[(list X (listof Y))] that contain zero or more items that match the
  key value for the group. For example, you can group a sequence of strings according to the first letter in
  each string. In this case, the first letter is the key, and is the X type of
- (list X (listof Y)) and the grouped items are of type Y.
+ @racket[(list X (listof Y))] and the grouped items are of type Y.
 
  @(linq-examples
    (eval:check (from i in '("hello" "there" "hi" "cow" "car" "cat" "dog" "test")
@@ -117,7 +116,7 @@ The documentation below is based on the
                                            (Nick (Lalo)) (Sam (Joshua)) (Will (Jacob))
                                            (Brie (Dana)) (Joe (Joshua Will)))))
 
- Similar to @racket[select], we can post-process the results of a group clause by using an into form:
+ Similar to @racket[select], we can post-process the results of a group clause by using an @racket[into] form:
 
  @(linq-examples
    (eval:check (from i in '("hello" "there" "hi" "cow" "car" "cat" "dog" "test")
@@ -130,27 +129,27 @@ The documentation below is based on the
                  (select (cadr groups)))
                '((1 3 5 7 9) (2 4 6 8))))}
 
-@defform[#:kind "query operator" (let var = expr)]{
+@defform[#:kind "query operator" (let var expr)]{
  In a query expression, it is sometimes useful to store the result of a sub-expression in order to use it in
  subsequent clauses. You can do this with the let keyword, which creates a new range variable and initializes
  it with the result of the expression you supply.
 
  @(linq-examples
    (eval:check (from i in '("hello" "there" "hi" "cow" "car" "cat" "dog" "test")
-                 (let k = (substring i 0 1))
+                 (let k (substring i 0 1))
                  (group i by k))
                '(("h" ("hello" "hi")) ("t" ("there" "test")) ("c" ("cow" "car" "cat")) ("d" ("dog"))))
    (eval:check (from i in '(1 2 3)
-                 (let j = (+ i 1))
+                 (let j (+ i 1))
                  (select j)) '(2 3 4))
    (eval:check (from i in '(1 2 3)
-                 (let k = add1)
+                 (let k add1)
                  (select (k i))) '(2 3 4))
    (eval:check (from i in '(1 2 3)
-                 (let k = (> i 1))
+                 (let k (> i 1))
                  (select k)) '(#f #t #t))
    (eval:check (from i in '(1 2 3 4 5 6 7 8 9)
-                 (let k = (odd? i))
+                 (let k (odd? i))
                  (group i by k)) '((#t (1 3 5 7 9)) (#f (2 4 6 8)))))
 }
 
@@ -176,7 +175,7 @@ The documentation below is based on the
  More usage of @racket[where] can be seen under other query operator's examples.
 }
 
-@defform[#:kind "query operator" (from var in src)]{
+@defform[#:kind "query operator" #:literals (in) (from var in src)]{
  The from clause specifies the following:
 
  @itemlist[
@@ -211,21 +210,23 @@ The documentation below is based on the
                                       1
                                       (* (! (sub1 x)) x))))]
                  (from i in (list 1 2 3)
-                   (let fact = (! i))
+                   (let fact (! i))
                    (from j in '(4 5 6))
                    (where (> j 4))
                    (select (list fact j))))
                '((1 5) (1 6) (2 5) (2 6) (6 5) (6 6))))}
 
-@defform[#:kind "query operator" (join var in src on key-expr comp-func key-expr)]{
+@defform[#:kind "query operator" #:literals (in on) (join var in src on expr comp-func expr)]{
  The join clause is useful for associating elements from different source sequences that have no direct
  relationship. For example, a food distributor might have a list of suppliers of a
  certain product, and a list of buyers. A join clause can be used, for example, to create a list of the
  suppliers and buyers of that product who are all in the same specified region.
 
  A join clause takes two source sequences as input. The elements in each sequence must contain a property
- that can be compared using the function passed in the join clause.
-
+ that can be compared using the function passed in the join clause. The expr on the right
+ can not contain any range variable other than the one being introduced. The expr on the left
+ can contain any range variable other than the one being introduced.
+ 
  @(linq-examples
    (eval:check (from i in '(1 2 3)
                  (join j in '(4 5 6) on 1 = 1)
@@ -241,9 +242,10 @@ The documentation below is based on the
                    (join k in '(1 1 1) on k < i)
                    (select k))
                  '())
-   (eval:check (from fship in `((Turab Paulette) (Turab Joshua) (Paulette Turab) (Lalo Turab)
-                                                 (Dana Joe) (Joshua Lalo) (Jacob Nick) (Nick Lalo)
-                                                 (Sam Joshua) (Will Jacob) (Brie Dana) (Joe Joshua) (Joe Will))
+   (eval:check (from fship in `((Turab Paulette) (Turab Joshua) (Paulette Turab)
+                                                 (Lalo Turab) (Dana Joe) (Joshua Lalo)
+                                                 (Jacob Nick) (Nick Lalo) (Sam Joshua)
+                                                 (Will Jacob) (Brie Dana) (Joe Joshua) (Joe Will))
                  (join j in '(Turab Paulette Joshua Lalo) on (car fship) equal? j)
                  (select (list j (cadr fship))))
                '((Turab Paulette) (Turab Joshua) (Paulette Turab) (Lalo Turab) (Joshua Lalo)))
@@ -255,11 +257,13 @@ The documentation below is based on the
                                            (cons "Tom" "Dell")
                                            (cons "Jack" "Lenovo")
                                            (cons "Peter" "Toshiba")
-                                           (cons "Tom" "Mac")) on (car person) string=? (car comp-owner))
+                                           (cons "Tom" "Mac")) on (car person)
+                                                               string=?
+                                                               (car comp-owner))
                  (select (list (car person) (cddr person) (cdr comp-owner))))
                '(("Peter" #t "Toshiba") ("Jack" #f "Lenovo") ("Tom" #t "Dell") ("Tom" #t "Mac"))))
 
- To perform a group-join, you can use the into form of join:
+ To perform a group-join, you can use the @racket[into] form of join:
 
  @(linq-examples
    (eval:check (from person in (list (cons "Peter" (cons 18 #t))
@@ -270,7 +274,9 @@ The documentation below is based on the
                                            (cons "Tom" "Dell")
                                            (cons "Jack" "Lenovo")
                                            (cons "Peter" "Toshiba")
-                                           (cons "Tom" "Mac")) on (car person) string=? (car comp-owner) into groups)
+                                           (cons "Tom" "Mac")) on (car person)
+                                                               string=?
+                                                               (car comp-owner) into groups)
                  (select (list (car person) (cddr person) (map cdr groups))))
                '(("Peter" #t ("Toshiba")) ("Jack" #f ("Lenovo")) ("Tom" #t ("Dell" "Mac")) ("Pat" #t ()))))
 }
@@ -278,7 +284,7 @@ The documentation below is based on the
 @defform[#:kind "query operator" (orderby [key-expr comp-func] ...+)]{
  In a query expression, the orderby clause causes the returned sequence to be sorted. Multiple keys can be
  specified in order to perform one or more secondary sort operations. The sorting is performed by the function
- associated to each key-expr. The function should not contain any range variables introduced in the linq query.
+ associated to each expr. The function should not contain any range variables introduced in the linq query.
 
  @(linq-examples
    (eval:check (from i in '(1 2 3)
@@ -305,7 +311,7 @@ The documentation below is based on the
            query-expression-syntax-for-standard-query-operators"]{
  official documentation}:
 
-@defproc[(select [sel-func (X -> Y)] [src (sequenceof X)]) (sequenceof Y)]{
+@defproc[(select [sel-func (X -> Y)] [src (sequenceof X)]) (listof Y)]{
  Projects each element of a sequence into a new form.
 
  @(linq-examples
@@ -320,19 +326,19 @@ The documentation below is based on the
 @defproc[(select-many [sel-func (X -> Y)] [res-func (X Y -> Z)] [src (sequenceof X)]) (listof Z)]{
  Projects each element of the src sequence and the sequence returned by @racket[sel-func] and flattens
  the resulting sequences into one sequence. One can think about this like an abstraction over a
- nester for loop, where for each X in src, and for each Y in (sel-func X), a list containing
- (res-func X Y) is produced.
+ nester for loop, where for each X in src, and for each Y in @racket[(sel-func X)], a list containing
+ @racket[(res-func X Y)] is produced.
 
  @(linq-examples
    (eval:check (select-many (λ (x) '(4 5 6)) list '(1 2 3))
                '((1 4) (1 5) (1 6) (2 4) (2 5) (2 6) (3 4) (3 5) (3 6)))
    (eval:check (select-many add1 list 3)
                '((0 0) (1 0) (1 1) (2 0) (2 1) (2 2)))
-   (eval:check (select-many (λ (x) (list x))
+   (eval:check (select-many list
                             (λ (x y) (map + x y)) '((1 2 3) (4 5 6) (7 8 9)))
                '((2 4 6) (8 10 12) (14 16 18))))}
 
-@defproc[(where [pred (X -> boolean)] [src (sequenceof X)]) (sequenceof X)]{
+@defproc[(where [pred (X -> boolean)] [src (sequenceof X)]) (listof X)]{
  Filters a sequence of values based on a predicate.
 
  @(linq-examples
@@ -344,8 +350,8 @@ The documentation below is based on the
                '((3 2 4 3 1) (1 3 2 4))))}
 
 @defproc[(groupby [sel-func (X -> Y)] [part-by-func (X -> Z)] [src (sequenceof X)]) (listof (list Z (listof Y)))]{
- Groups the elements of a sequence. The grouping is done based on the part-by-func function, and
- the sel-func is applied to each grouped item.
+ Groups the elements of a sequence. The grouping is done based on the @racket[part-by-func] function, and
+ the @racket[sel-func] is applied to each grouped item.
 
  @(linq-examples
    (eval:check (groupby (λ (x) x) (λ (x) (modulo x 3)) '(1 2 3 4 5 6))
@@ -356,9 +362,9 @@ The documentation below is based on the
 
 @defproc[(join [outer-sel-func (A -> X)] [inner-sel-func (B -> Y)] [sel-when (X Y -> boolean)]
                [sel-func (A B -> Z)] [outer-src (sequenceof A)] [inner-src (sequenceof B)]) (listof Z)]{
- Correlates the elements of two sequences based on matching keys. The join is based in the sel-when
- function (with outer-sel-func and inner-sel-func applied), and the resulting list contains
- results of sel-func function.
+ Correlates the elements of two sequences based on matching keys. The join is based on the @racket[sel-when]
+ function (with @racket[outer-sel-func] and @racket[inner-sel-func] applied), and the resulting list contains
+ results of @racket[sel-func] function.
 
  @(linq-examples
    (eval:check (join (λ (x) x) (λ (x) x)
@@ -385,7 +391,7 @@ The documentation below is based on the
                `((1 (1)) (2 (1 2)) (3 (1 3))(4 (1 2 4)) (5 (1 5)))))
 }
 
-@defproc[(orderby [src (sequenceof X)] [sort-seq (nelistof [X X -> boolean])]) (sequenceof X)]{
+@defproc[(orderby [src (sequenceof X)] [sort-seq (nelistof [X X -> boolean])]) (listof X)]{
  Sorts the elements of a sequence with the comparator functions. When provided more than one
  function, the function is first sorted by the first function, then items that were in the
  same ordering by the second function, and so on...
@@ -399,3 +405,23 @@ The documentation below is based on the
                         (list (λ (x y) (> (car x) (car y)))
                               (λ (x y) (< (cdr x) (cdr y)))))
                '((3 . 3) (2 . 2) (2 . 3) (1 . 1) (1 . 2))))}
+
+@section{Literals}
+
+These are the literals used in linq query operators.
+
+@defidform[in]{
+ Literal used in a @racket[from] clause.
+}
+
+@defidform[on]{
+ Literal used in a @racket[join] clause.
+}
+
+@defidform[into]{
+ Literal used in a @racket[join] or continuation clause.
+}
+
+@defidform[by]{
+ Literal used in a @racket[group] clause.
+}

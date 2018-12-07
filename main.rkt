@@ -225,7 +225,7 @@
 (define-syntax (from stx)
   (syntax-parse stx #:literals(in)
     [(_ var:id ~! in src:expr e e2 ...)
-     (handle-query-body #'var #'src (env-add (make-env) #'var (λ (x) x)) #`(e e2 ...))]))
+     (handle-query-body #'var #'src (env-add (make-env) #'var #'(λ (x) x)) #`(e e2 ...))]))
 
 ;; query-body-clause:
 ;; `(curr-src [(from var in src) |
@@ -270,7 +270,7 @@
                        (λ (#,var) #,(insert-vars var #'keyExpr env))
                        #,src)]
            [_ (raise-syntax-error 'linq-query "A query body must end with a select or a groupby clause." #'e)])]
-    [(e1 e2 ...) (syntax-parse #'e1 #:literals (by let = group in on into orderby from join select where) ;#:datum-literals (from join select)
+    [(e1 e2 ...) (syntax-parse #'e1 #:literals (by let group in on into orderby from join select where) ;#:datum-literals (from join select)
                    [((~or select group) selExpr:expr (~optional (~seq by keyExpr:expr)))
                     (raise-syntax-error 'linq-query
                                         "Final query clauses (select or group) should only appear at the end of a query. Use a query continuation to avoid this."
@@ -290,7 +290,7 @@
                     (define new-src (handle-joins #'group-join src var #'newSrc #'v #'oExpr #'iExpr #'func env))
                     (define new-env (env-add (update-bindings env) #'v1 car))
                     (handle-query-body var new-src new-env #'(e2 ...))]
-                   [(let v:id ~! = newSrc:expr)
+                   [(let v:id ~! newSrc:expr)
                     ;; apply join between src and newSrc, then add v to env as car and `add` cdr to previous bindings.
                     (define new-src #`(select (λ (#,var) (cons #,(insert-vars var #'newSrc env) #,var)) #,src))
                     (define new-env (env-add (update-bindings env) #'v car))
@@ -306,7 +306,7 @@
                    [(select selExpr into ~! v:id)
                     ;; apply select on src, then add v to env as car and `add` cdr to previous bindings.
                     (handle-query-body #'v #`(select (λ (#,var) #,(insert-vars var #'selExpr env)) #,src)
-                                       (env-add (make-env) #'v (λ (x) x))
+                                       (env-add (make-env) #'v #'(λ (x) x))
                                        #'(e2 ...))]
                    [(group selExpr:expr by keyExpr:expr into ~! v:id)
                     ;; apply groupby on src with selExpr where groups are made using keyExpr,
@@ -314,7 +314,7 @@
                                        #`(groupby (λ (#,var) #,(insert-vars var #'selExpr env))
                                                   (λ (#,var) #,(insert-vars var #'keyExpr env))
                                                   #,src)
-                                       (env-add (make-env) #'v (λ (x) x))
+                                       (env-add (make-env) #'v #'(λ (x) x))
                                        #'(e2 ...))]
                    [else (raise-syntax-error 'linq-query
                                              "Not a proper query operation."
@@ -396,7 +396,7 @@
 ;; maps k to (f · cdr).
 (define-for-syntax (update-bindings env)
   (for/list [(k (env-keys env))]
-    (cons k (λ (x) ((env-ref env k) (cdr x))))))
+    (cons k #`(compose #,(env-ref env k) cdr))))
 
 #;(define-syntax from-db
     (syntax-parser 
