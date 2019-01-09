@@ -13,7 +13,7 @@
 
 @title{R-LINQ: .NET's LINQ in Racket}
 
-source code: @url["https://github.com/turab1996/r-linq"]
+source code: @url["https://github.com/trajafri/r-linq"]
 
 @defmodule[r-linq]
 @author[@author+email["Turab Jafri" "syajafri@iu.edu"]
