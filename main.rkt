@@ -81,7 +81,7 @@
 ;; orderby: [SequenceOf X] [NonEmptyListof [X X -> Boolean]]  -> [ListOf X]
 ;; sorts the given list by the order described by the given list of functions.
 (define (orderby lx fs)
-  (let ((cfs (compose-function (car fs) (cdr fs))))
+  (let ((cfs (compose-function fs)))
     (sort (if (list? lx) lx (sequence->list lx)) cfs)))
 
 (module+ test
@@ -93,20 +93,21 @@
   (check-equal? (orderby '((1 . 2) (2 . 3) (3 . 3) (1 . 1) (2 . 2)) `(,(λ (x y) (> (car x) (car y))) ,(λ (x y) (< (cdr x) (cdr y)))))
                 '((3 . 3) (2 . 2) (2 . 3) (1 . 1) (1 . 2))))
 
-;; compose-functions: [X X -> Boolean] [Listof [X X -> Boolean]] -> [X X -> Boolean]
-(define (compose-function f fs)
-  (foldl (lambda (f acc)
-           (lambda (x y) (or (acc x y) (and (not (acc y x)) (f x y)))))
-         f fs))
+;; compose-functions: [Listof [X X -> Boolean]] -> [X X -> Boolean]
+(define (compose-function fs)
+  (foldr (lambda (f acc)
+           (lambda (x y) (or (f x y) (and (not (f y x)) (acc x y)))))
+         (λ (x y) true) fs))
 
 (module+ test
-  (define <cdr-then-<car (compose-function (λ (x y) (< (cdr x) (cdr y))) `(,(λ (x y) (< (car x) (car y))))))
+  (define <cdr-then-<car (compose-function  `(,(λ (x y) (< (cdr x) (cdr y))) ,(λ (x y) (< (car x) (car y))))))
   (check-true (<cdr-then-<car `(1 . 2) `(1 . 3)))
   (check-false (<cdr-then-<car `(2 . 2) `(1 . 2)))
   (check-true (<cdr-then-<car `(1 . 2) `(2 . 2)))
-  (check-false (<cdr-then-<car `(1 . 2) `(1 . 2)))
-  (define <cadr-then-<car-then->cddr (compose-function (λ (x y) (< (cadr x) (cadr y)))
-                                                       `(,(λ (x y) (< (car x) (car y))) ,(λ (x y) (> (cddr x) (cddr y))))))
+  (check-true (<cdr-then-<car `(1 . 2) `(1 . 2)))
+  (define <cadr-then-<car-then->cddr (compose-function `(,(λ (x y) (< (cadr x) (cadr y)))
+                                                         ,(λ (x y) (< (car x) (car y)))
+                                                         ,(λ (x y) (> (cddr x) (cddr y))))))
   (check-false (<cadr-then-<car-then->cddr '(1 2 . 3) '(1 2 . 4)))
   (check-true (<cadr-then-<car-then->cddr '(1 2 . 3) '(1 2 . 1)))
   (check-false (<cadr-then-<car-then->cddr '(1 2 . 3) '(1 1 . 1)))
