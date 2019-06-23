@@ -4,7 +4,7 @@
 (define scribblings
   '(("main.scrbl" () (experimental) "r-linq")))
 (define version "1.0")
-(define deps '("base"))
+(define deps '("base" "rackunit"))
 (define build-deps
   '("racket-doc"
     "scribble-lib"))

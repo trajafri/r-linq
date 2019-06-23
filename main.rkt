@@ -438,12 +438,12 @@
 ;; by
 (define-syntax by
   (syntax-parser
-    [_ #'(raise-syntax-error #f "by should only appear as a keyword in an orderby clause." #'in)]))
+    [_ #'(raise-syntax-error #f "by should only appear as a keyword in an orderby clause." #'by)]))
 
 ;; into
 (define-syntax into
   (syntax-parser
-    [_ #'(raise-syntax-error #f "into should only appear as a keyword in a query continuation expression." #'in)]))
+    [_ #'(raise-syntax-error #f "into should only appear as a keyword in a query continuation expression." #'into)]))
 
 ;; on
 (define-syntax on
@@ -453,5 +453,5 @@
 ;; group
 (define-syntax group
   (syntax-parser
-    [_ #'(raise-syntax-error #f "group clause should only appear in a linq query. You may want to use the groupby function instead." #'on)]))
+    [_ #'(raise-syntax-error #f "group clause should only appear in a linq query. You may want to use the groupby function instead." #'group)]))
 
