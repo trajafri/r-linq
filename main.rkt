@@ -1,9 +1,9 @@
 #lang racket
 
-(require (for-syntax syntax/parse #;db))
+(require (for-syntax syntax/parse))
 
 (provide ;; operations provided
- from #;from-db join group-join where orderby select select-many groupby
+ from join group-join where orderby select select-many groupby
  group in on by into)
 
 ;                                                                 
@@ -398,19 +398,6 @@
 (define-for-syntax (update-bindings env)
   (for/list [(k (env-keys env))]
     (cons k #`(compose #,(env-ref env k) cdr))))
-
-#;(define-syntax from-db
-    (syntax-parser 
-      [(_ usrname:string dbname:string query)
-       (let [(db (postgresql-connect #:user (syntax-e #'usrname)
-                                     #:database (syntax-e #'dbname)))]
-         (foldr (λ (kv acc)
-                  #`(let ((#,(datum->syntax #'query (car kv)) `#,@(cdr kv))) #,acc))
-                #'query
-                (map (λ (t) `(,(string->symbol t)
-                              ,(map vector->list
-                                    (query-rows db (string-append "select * from " t)))))
-                     (list-tables db))))]))
 
 ;                                                                  
 ;                                                                  
