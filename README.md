@@ -8,3 +8,9 @@ Installation
 To install from Github
 
 ``raco pkg install https://github.com/trajafri/r-linq.git``
+
+
+Documentation
+-------------
+
+https://docs.racket-lang.org/r-linq/index.html
