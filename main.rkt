@@ -97,14 +97,14 @@
 (define (compose-function fs)
   (foldr (lambda (f acc)
            (lambda (x y) (or (f x y) (and (not (f y x)) (acc x y)))))
-         (λ (x y) true) fs))
+         (λ (x y) false) fs))
 
 (module+ test
   (define <cdr-then-<car (compose-function  `(,(λ (x y) (< (cdr x) (cdr y))) ,(λ (x y) (< (car x) (car y))))))
   (check-true (<cdr-then-<car `(1 . 2) `(1 . 3)))
   (check-false (<cdr-then-<car `(2 . 2) `(1 . 2)))
   (check-true (<cdr-then-<car `(1 . 2) `(2 . 2)))
-  (check-true (<cdr-then-<car `(1 . 2) `(1 . 2)))
+  (check-false (<cdr-then-<car `(1 . 2) `(1 . 2)))
   (define <cadr-then-<car-then->cddr (compose-function `(,(λ (x y) (< (cadr x) (cadr y)))
                                                          ,(λ (x y) (< (car x) (car y)))
                                                          ,(λ (x y) (> (cddr x) (cddr y))))))
