@@ -1,5 +1,5 @@
 #lang racket
-(require r-linq rackunit)
+(require "./main.rkt" rackunit)
 
 ;;; The following examples are based on the examples shown here:
 ;;; https://msdn.microsoft.com/en-us/library/bb308959.aspx
