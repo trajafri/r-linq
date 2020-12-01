@@ -279,22 +279,22 @@
                    [(from v:id in newSrc:expr)
                     ;; apply selectmany between src and newSrc, then add v to env as car and `add` cdr to previous bindings.
                     (define new-src (handle-inner-from src var #'newSrc #'v env))
-                    (define new-env (env-add (update-bindings env) #'v car))
+                    (define new-env (env-add (update-bindings env) #'v #'car))
                     (handle-query-body var new-src new-env #'(e2 ...))]
                    [(join v:id in newSrc:expr on oExpr func iExpr)
                     ;; apply join between src and newSrc, then add v to env as car and `add` cdr to previous bindings.
                     (define new-src (handle-joins #'join src var #'newSrc #'v #'oExpr #'iExpr #'func env))
-                    (define new-env (env-add (update-bindings env) #'v car))
+                    (define new-env (env-add (update-bindings env) #'v #'car))
                     (handle-query-body var new-src new-env #'(e2 ...))]
                    [(join v:id in newSrc:expr on oExpr func iExpr into v1:id)
                     ;; apply group-join between src and newSrc, then add v1 to env as car and `add` cdr to previous bindings.
                     (define new-src (handle-joins #'group-join src var #'newSrc #'v #'oExpr #'iExpr #'func env))
-                    (define new-env (env-add (update-bindings env) #'v1 car))
+                    (define new-env (env-add (update-bindings env) #'v1 #'car))
                     (handle-query-body var new-src new-env #'(e2 ...))]
                    [(let v:id ~! newSrc:expr)
                     ;; apply join between src and newSrc, then add v to env as car and `add` cdr to previous bindings.
                     (define new-src #`(select (λ (#,var) (cons #,(insert-vars var #'newSrc env) #,var)) #,src))
-                    (define new-env (env-add (update-bindings env) #'v car))
+                    (define new-env (env-add (update-bindings env) #'v #'car))
                     (handle-query-body var new-src new-env #'(e2 ...))]
                    [(where predExpr:expr)
                     ;; apply where on src (filter wrt predExpr).
